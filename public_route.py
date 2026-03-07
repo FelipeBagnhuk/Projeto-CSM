@@ -1,8 +1,10 @@
-from fastapi import APIRouter, FastAPI, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from edit_page import Page, SessionLocal
+from models import Page, Section
+from data_base import SessionLocal
 
-admin_router = APIRouter(prefix="/admin", tags=["Admin"])
+
+public_router = APIRouter(prefix="/public", tags=["Public"])  # Mudança aqui
 
 def get_db():
     db = SessionLocal()
@@ -11,9 +13,18 @@ def get_db():
     finally:
         db.close()
 
-
 # ROTA PÚBLICA - VISUALIZAÇÃO
-@app.get("/public")
-def public_view(db: Session = Depends(get_db)):
-    pages = db.scalars(db.select(Page)).all()
-    return {"pages": [page.__dict__ for page in pages]}
+@public_router.get("/pages/{slug}")
+def get_page_sections(slug: str, db: Session = Depends(get_db)):
+    page = db.scalar(db.select(Page).where(Page.slug == slug))
+    if not page:
+        raise HTTPException(404, "Página não encontrada")
+    
+    sections = db.scalars(
+        db.select(Section).where(Section.page_id == page.id).order_by(Section.order)
+    ).all()
+    
+    return {
+        "page": page.__dict__,
+        "sections": [s.__dict__ for s in sections]
+    }

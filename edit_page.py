@@ -1,23 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Session
 from typing import List
 import json
-
-
-
-DATABASE_URL = "postgresql://postgres:pstgr3word@localhost:5432/pelp_cms" 
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
+from models import Page, Section, SectionCreate, SectionRead
+from data_base import SessionLocal
 
 # ENUMS:
-
 class PageStatus:
     DRAFT= "draft" #rascunho, pagína sendo editada e não publicada
     PUBLISHED = "published" #publicado, no ar e visível
@@ -77,59 +65,13 @@ class SectionType:
     BALOON_ACCORDION_B4_2 = "Baloon-Accordion_B4_2"  # Segundo balão do B4
     BALOON_ACCORDION_B4_3 = "Baloon-Accordion_B4_3"  # Terceiro balão do B4
 
-# MODELOS BANCO
+admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
-class Page(Base): #Página inteira
-    __tablename__ = "pages"
-    
-    id = Column(Integer, primary_key=True) #Incremental e não se repete 
-    slug = Column(String(50), unique=True, index=True)
-    title = Column(String(100))
-    status = Column(String(20), default="pubished")
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
-class Section(Base): #As 48 sessões da página  
-    __tablename__ = "sections" 
-
-    id = Column(Integer, primary_key=True)
-    page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
-    type = Column(String(50), nullable=False)     
-    content = Column(Text)                         
-    order = Column(Integer, default=0)             
-
-class CollectionItem(Base):  
-    __tablename__ = "collection_items"
-    
-    id = Column(Integer, primary_key=True)
-    section_id = Column(Integer, ForeignKey("sections.id"), nullable=False)
-    content = Column(Text, nullable=False)
-    order = Column(Integer, default=0)
-
-# MODELOS PYDANTIC
-
-class SectionCreate(BaseModel):  # Recebe do frontend
-    type: str                      # "Menu-Icon_1"
-    content: str                   
-    order: Optional[int] = 0
-
-class SectionRead(BaseModel):    # Envia pro frontend
-    id: int                       # 1
-    type: str
-    content: str
-    order: int
-    
-    class Config:
-        from_attributes = True     # Lê do SQLAlchemy
-
-
-
-    
-    
-    # Snapshot
-  
-
-
-# UTILITÁRIOS
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 

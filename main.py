@@ -1,22 +1,13 @@
-from fastapi import FastAPI, Depends, APIRouter
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from edit_page import Page, SessionLocal
-from public_route import public_router 
+from edit_page import admin_router
+from public_route import public_router
 
 app = FastAPI(title="PELP CMS API", version="1.0.0")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 # Inclui routers PRIMEIRO
 app.include_router(public_router)
-admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 app.include_router(admin_router)
 
 # Monta arquivos estáticos
@@ -35,30 +26,8 @@ app.add_middleware(
 def root():
     return {"message": "PELP CMS API rodando!", "status": "ok"}
 
-# ROTA ADMIN - EDIÇÃO
+from data_base import engine, Base  
 
-app.include_router(admin_router)
-    
-    # Busca ou cria página
-   
-
-    
-    # Deleta sections antigas
-  
-    
-    # === HERO ===
- 
-    
-    # === TEXT IMAGE ===
-   
-
-    
-    # === TEXT CENTER ===
- 
-    # === ATIVOS ===
-  
-    
-    # === DESAFIOS ===
-  
-    
-  
+# CRIAR TABELAS (rode UMA VEZ só)
+Base.metadata.create_all(bind=engine)
+print("✅ Tabelas criadas: pages, sections, collection_items!")
