@@ -1,16 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, APIRouter
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import edit_page
-from edit_page import Page
-from fastapi import APIRouter, Depends, HTTPException
-from edit_page import SessionLocal
-from sqlalchemy.orm import sessionmaker, Session, relationship
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from edit_page import DATABASE_URL
+from sqlalchemy.orm import Session
+from edit_page import Page, SessionLocal
+from public_route import public_router 
 
-app = FastAPI()
-engine = create_async_engine(DATABASE_URL)
+app = FastAPI(title="PELP CMS API", version="1.0.0")
 
 def get_db():
     db = SessionLocal()
@@ -19,20 +14,51 @@ def get_db():
     finally:
         db.close()
 
-router = APIRouter(prefix="/edit", tags=["PELP Digital Page Editor"])
+# Inclui routers PRIMEIRO
+app.include_router(public_router)
+admin_router = APIRouter(prefix="/admin", tags=["Admin"])
+app.include_router(admin_router)
 
+# Monta arquivos estáticos
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# CORS
 app.add_middleware(
     CORSMiddleware, 
     allow_origins=["*"], 
     allow_methods=["*"], 
     allow_headers=["*"]
 )
-app.include_router(edit_page.router)
 
-# ROTA PÚBLICA - VISUALIZAÇÃO
+# Health check
+@app.get("/")
+def root():
+    return {"message": "PELP CMS API rodando!", "status": "ok"}
 
-@app.get("/public")
-async def public_view(db: Session = Depends(get_db)):
-    pages = db.scalars(db.select(Page)).all()
-    return pages
+# ROTA ADMIN - EDIÇÃO
+
+app.include_router(admin_router)
+    
+    # Busca ou cria página
+   
+
+    
+    # Deleta sections antigas
+  
+    
+    # === HERO ===
+ 
+    
+    # === TEXT IMAGE ===
+   
+
+    
+    # === TEXT CENTER ===
+ 
+    # === ATIVOS ===
+  
+    
+    # === DESAFIOS ===
+  
+    
+  

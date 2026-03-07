@@ -9,6 +9,7 @@ from typing import List
 import json
 
 
+
 DATABASE_URL = "postgresql://postgres:pstgr3word@localhost:5432/pelp_cms" 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -123,32 +124,6 @@ class SectionRead(BaseModel):    # Envia pro frontend
 
 
 
-
-# ROTA ADMIN - EDIÇÃO
-
-    
-    # Busca ou cria página
-   
-    
-    # Deleta sections antigas
-  
-    
-    # === HERO ===
- 
-    
-    # === TEXT IMAGE ===
-   
-
-    
-    # === TEXT CENTER ===
- 
-    # === ATIVOS ===
-  
-    
-    # === DESAFIOS ===
-  
-    
-  
     
     
     # Snapshot
