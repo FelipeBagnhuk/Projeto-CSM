@@ -8,19 +8,12 @@ from sqlalchemy.sql import func
 from typing import List
 import json
 
+
 DATABASE_URL = "postgresql://postgres:pstgr3word@localhost:5432/pelp_cms" 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-router = APIRouter(prefix="/edit", tags=["PELP Digital Page Editor"])
 
 # ENUMS:
 
@@ -127,8 +120,6 @@ class SectionRead(BaseModel):    # Envia pro frontend
     
     class Config:
         from_attributes = True     # Lê do SQLAlchemy
-
-# ROTA PÚBLICA - VISUALIZAÇÃO
 
 
 
