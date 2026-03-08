@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from edit_page import admin_router
 from public_route import public_router
+from admin_route import admin_router
 
 app = FastAPI(title="PELP CMS API", version="1.0.0")
 

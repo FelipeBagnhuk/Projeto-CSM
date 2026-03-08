@@ -13,7 +13,7 @@ def get_db():
     finally:
         db.close()
 
-# ROTA PÚBLICA - VISUALIZAÇÃO
+# ROTA PÚBLICA - VISUALIZAÇÃO #Aprimorar rota futuramente
 @public_router.get("/pages/{slug}")
 def get_page_sections(slug: str, db: Session = Depends(get_db)):
     page = db.scalar(db.select(Page).where(Page.slug == slug))
@@ -28,3 +28,4 @@ def get_page_sections(slug: str, db: Session = Depends(get_db)):
         "page": page.__dict__,
         "sections": [s.__dict__ for s in sections]
     }
+

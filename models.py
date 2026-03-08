@@ -1,9 +1,17 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from data_base import Base
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+from sqlalchemy.types import JSON
+import json
 
 # MODELOS PYDANTIC
 class SectionCreate(BaseModel):  # Recebe do frontend
@@ -47,3 +55,35 @@ class CollectionItem(Base):
     section_id = Column(Integer, ForeignKey("sections.id"), nullable=False)
     content = Column(Text, nullable=False)
     order = Column(Integer, default=0)
+
+class PageRead(BaseModel): 
+    id: int
+    slug: str
+    title: str
+    status: str
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+class PageCreate(BaseModel):  
+    slug: str
+    title: str
+    status: str = "draft"
+
+class SectionCreate(BaseModel):
+    type: str
+    content: str
+    order: Optional[int] = 0
+
+class Snapshot(Base):
+    __tablename__ = "snapshots"
+    
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(Integer, nullable=False)  # ID da page ou section
+    entity_type = Column(String(20), nullable=False)  # "page" ou "section"
+    action = Column(String(50), nullable=False)  # "update", "publish"
+    data = Column(JSON)  # Dados antigos salvos como JSON
+    created_at = Column(DateTime, server_default=func.now())    
+

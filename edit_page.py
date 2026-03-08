@@ -65,7 +65,7 @@ class SectionType:
     BALOON_ACCORDION_B4_2 = "Baloon-Accordion_B4_2"  # Segundo balão do B4
     BALOON_ACCORDION_B4_3 = "Baloon-Accordion_B4_3"  # Terceiro balão do B4
 
-admin_router = APIRouter(prefix="/admin", tags=["Admin"])
+admin_router = APIRouter(prefix="/admin", tags=["Admin"]) # vou dar um jeito de tirar isso daqui depois
 
 def get_db():
     db = SessionLocal()
