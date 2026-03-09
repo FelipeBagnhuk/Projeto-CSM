@@ -4,12 +4,14 @@ from typing import Optional, List
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, create_engine
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, sessionmaker 
+from enum import Enum
 
-# Base LOCAL - resolve todos os erros
+
+# Base LOCAL 
 class Base(DeclarativeBase):
     pass
 
-# MODELOS PYDANTIC (mantidos iguais)
+# MODELOS PYDANTIC 
 class SectionCreate(BaseModel):  
     type: str                  
     content: str  
@@ -40,7 +42,13 @@ class PageCreate(BaseModel):
     title: str
     status: str = "draft"
 
-# MODELOS BANCO (agora SEM ERROS)
+class SectionUpdate(BaseModel):
+    content: Optional[str] = None
+    type: Optional[str] = None
+    order: Optional[int] = None    
+
+# MODELOS BANCO
+
 class Page(Base): 
     __tablename__ = "pages"
     
@@ -53,12 +61,11 @@ class Page(Base):
 
 class Section(Base): 
     __tablename__ = "sections" 
-
     id = Column(Integer, primary_key=True)
     page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
     type = Column(String(50), nullable=False)     
     content = Column(Text)                 
-    order = Column(Integer, default=0)      
+    order = Column(Integer, default=0)    
 
 class CollectionItem(Base):  
     __tablename__ = "collection_items"
@@ -77,3 +84,8 @@ class Snapshot(Base):
     action = Column(String(50), nullable=False)
     data = Column(JSON)
     created_at = Column(DateTime, server_default=func.now())    
+
+
+class PageUpdate(BaseModel):
+    title: str | None = None
+    status: str | None = None 
