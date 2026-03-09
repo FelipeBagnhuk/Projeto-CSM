@@ -1,5 +1,5 @@
-from typing import List
-
+from typing import List, Optional, cast, Any 
+from models import Page, Section, SectionCreate, SectionRead, PageRead, Snapshot 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from edit_page import PageStatus
@@ -7,6 +7,7 @@ from models import Page, Section, SectionCreate, SectionRead, PageRead, Snapshot
 from data_base import SessionLocal
 from sqlalchemy.types import JSON
 import json
+from typing import Optional
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])  
 
@@ -19,25 +20,16 @@ def get_db():
 
 #Função da salvar snapshot
 
-def save_snapshot(entity_id: int, action: str, old_data: dict, db: Session):
+def save_snapshot(entity_id: str | int, action: str, snapshot_data: dict, db: Session):
     """Salva snapshot dos dados antigos antes da edição"""
-    snapshot_data = {
-        "entity_id": entity_id,
-        "entity_type": old_data.get("entity_type", "section"),  # page ou section
-        "old_content": old_data.get("content", old_data),  # Conteúdo antigo
-        "old_type": old_data.get("type"),
-        "old_order": old_data.get("order")
-    }
-    
     snapshot = Snapshot(
-        entity_id=entity_id,
-        entity_type="section" if "content" in old_data else "page",
+        entity_id=str(entity_id),  # Converte tudo pra string
+        entity_type=snapshot_data["entity_type"],
         action=action,
         data=snapshot_data
     )
     db.add(snapshot)
     db.commit()
-
 #Lista as páginas:
 
 @admin_router.get("/pages", response_model=List[PageRead]) 
@@ -79,30 +71,31 @@ async def get_page_sections(slug: str, db: Session = Depends(get_db)):
 #Atualiza seção específica: 
 
 @admin_router.put("/pages/{slug}/sections/{section_id}", response_model=SectionRead)
-async def update_section(slug: str, section_id: int, section_data: SectionCreate, db: Session = Depends(get_db)):
+async def update_section(slug: str, section_data: SectionCreate, section_id: int, db: Session = Depends(get_db)):
+    # Busca page e section
     page = db.query(Page).filter(Page.slug == slug).first()
     if not page:
         raise HTTPException(status_code=404, detail="Página não encontrada")
-        
-    section = db.query(Section).filter(Section.id == section_id, Section.page_id == page.id).first()
+    
+    section_query = db.query(Section).filter(Section.id == section_id, Section.page_id == page.id)
+    section = section_query.first()
     if not section:
         raise HTTPException(status_code=404, detail="Seção não encontrada")
-    
-    # SALVA SNAPSHOT dos dados ANTES da mudança
-    old_data = {
-        "id": section.id,
-        "type": section.type,
-        "content": section.content,
-        "order": section.order,
-        "entity_type": "section"
+
+    # SNAPSHOT SEM ERROS - usa query direta
+    snapshot_data = {
+        "entity_id": section_id, 
+        "entity_type": "section",
+        "old_type": section.type or "",
+        "old_content": section.content or "",
+        "old_order": section.order or 0
     }
-    save_snapshot(section.id, "section_update", old_data, db)
-    
-    # Atualiza seção
-    section.type = section_data.type
-    section.content = section_data.content
-    section.order = section_data.order
-    
+    save_snapshot(section_id, "section_update", snapshot_data, db)
+
+    update_dict = section_data.dict(exclude_unset=True)
+    for key, value in update_dict.items():
+        setattr(section, key, value)
+
     db.commit()
     db.refresh(section)
     return section
@@ -112,10 +105,16 @@ async def update_section(slug: str, section_id: int, section_data: SectionCreate
 @admin_router.put("/pages/{slug}/sections/reorder")
 async def reorder_sections(slug: str, sections_order: List[int], db: Session = Depends(get_db)):
     page = db.query(Page).filter(Page.slug == slug).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    
     for i, section_id in enumerate(sections_order):
-        section = db.query(Section).filter(Section.id == section_id).first()
-        if section and section.page_id == page.id:
-            section.order = i
+        section_query = db.query(Section).filter(Section.id == section_id, Section.page_id == page.id)
+        section = section_query.first()
+        
+        if section is not None: 
+            setattr(section, 'order', i)  
+    
     db.commit()
     return {"message": "Ordem atualizada"}
 
@@ -123,12 +122,24 @@ async def reorder_sections(slug: str, sections_order: List[int], db: Session = D
 
 @admin_router.post("/pages/{slug}/publish")
 async def publish_page(slug: str, db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
+    # Busca page SEM type hint problemático
+    page_query = db.query(Page).filter(Page.slug == slug)
+    page = page_query.first()
     if not page:
         raise HTTPException(status_code=404, detail="Página não encontrada")
     
-    await save_snapshot(page.id, "page_published", page.__dict__.copy(), db)
-    page.status = PageStatus.PUBLISHED
+
+    page_snapshot = {
+        "entity_id": slug,  # ← Usa STRING slug ao invés de page.id
+        "entity_type": "page",
+        "old_status": getattr(page, 'status', 'draft'),
+        "old_title": getattr(page, 'title', ''),
+        "old_slug": getattr(page, 'slug', '')
+    }
+    
+    save_snapshot(slug, "page_published", page_snapshot, db)  # ← SEM page.id
+    
+    setattr(page, 'status', PageStatus.PUBLISHED)  # ← Dinâmico
     db.commit()
     return {"message": "Página publicada"}
 
@@ -137,8 +148,13 @@ async def publish_page(slug: str, db: Session = Depends(get_db)):
 @admin_router.post("/pages/{slug}/preview")
 async def preview_page(slug: str, db: Session = Depends(get_db)):
     page = db.query(Page).filter(Page.slug == slug).first()
-    if page.status != PageStatus.DRAFT:
+    if not page:
+        raise HTTPException(status_code=400, detail="Página não encontrada")
+
+    current_status = getattr(page, 'status', '')
+    if current_status != PageStatus.DRAFT:
         raise HTTPException(status_code=400, detail="Só drafts podem ter preview")
+    
     return {"preview_url": f"/preview/{slug}", "page": page}
 
 # Lista Snapshots
