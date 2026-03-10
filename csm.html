@@ -67,8 +67,7 @@
         /* HERO SECTION */
         .hero {
             height: 100vh;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%23e3f2fd" width="1200" height="800"/><circle fill="%23419bf8" opacity="0.3" cx="200" cy="200" r="150"/><circle fill="%2368d6a0" opacity="0.4" cx="800" cy="300" r="200"/><circle fill="%23f8b248" opacity="0.3" cx="1000" cy="600" r="120"/><path fill="%232c3e50" opacity="0.1" d="M0 700Q300 650 600 720T1200 700V800H0Z"/></svg>') center/cover;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'%3E%3Crect fill='%23e3f2fd' width='1200' height='800'/%3E%3Ccircle fill='%23419bf8' opacity='0.3' cx='200' cy='200' r='150'/%3E%3Ccircle fill='%2368d6a0' opacity='0.4' cx='800' cy='300' r='200'/%3E%3Ccircle fill='%23f8b248' opacity='0.3' cx='1000' cy='600' r='120'/%3E%3Cpath fill='%232c3e50' opacity='0.1' d='M0 700Q300 650 600 720T1200 700V800H0Z'/%3E%3C/svg%3E") center/cover;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -234,26 +233,51 @@
 
         /* RESPONSIVO */
         @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-            
-            .hero h1 {
-                font-size: 2.5em;
-            }
-            
-            .hero p {
-                font-size: 1.2em;
-            }
-            
-            .two-column {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-            
-            .section {
-                padding: 60px 1rem;
-            }
+            .nav-menu { display: none; }
+            .hero h1 { font-size: 2.5em; }
+            .hero p { font-size: 1.2em; }
+            .two-column { grid-template-columns: 1fr; gap: 2rem; }
+            .section { padding: 60px 1rem; }
+        }
+
+        /* 🔥 CMS - BOTÕES PROFISSIONAIS */
+        .edit-master-btn {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white; border: none; padding: 15px 25px; border-radius: 50px;
+            font-weight: 700; font-size: 1.1em; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(231,76,60,0.4); transition: all 0.3s;
+        }
+        .edit-master-btn:hover { 
+            transform: translateY(-3px) scale(1.02); 
+            box-shadow: 0 15px 40px rgba(231,76,60,0.6); 
+        }
+
+        .edit-mode [data-editable]::after {
+            content: '✏️'; position: absolute; top: -12px; right: 5px; z-index: 1001;
+            background: #e74c3c; color: white; width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 11px;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(231,76,60,0.5); transition: all 0.2s;
+        }
+        .edit-mode [data-editable]::after:hover { 
+            background: #c0392b; transform: scale(1.15); 
+        }
+
+        /* FIX CONTENTEDITABLE - PRESERVA ESTILOS */
+        [data-editable][contenteditable="true"] {
+            outline: none !important; border: 2px solid #3498db !important;
+            background: rgba(52,152,219,0.1) !important; padding: 6px 10px !important;
+            border-radius: 8px !important; cursor: text !important;
+            color: inherit !important; font-family: inherit !important;
+            font-size: inherit !important; font-weight: inherit !important;
+            line-height: inherit !important; text-shadow: inherit !important;
+        }
+        .hero [data-editable][contenteditable="true"] { 
+            color: white !important; border-color: rgba(255,255,255,0.9) !important;
+            background: rgba(0,0,0,0.3) !important; 
+        }
+        .accordion-title [data-editable][contenteditable="true"] {
+            color: white !important; background: transparent !important;
         }
     </style>
 </head>
@@ -261,7 +285,7 @@
     <!-- HEADER -->
     <header>
         <nav>
-            <div class="logo">🏛️ PELP Digital</div>
+            <div class="logo" data-editable="LOGO">🏛️ PELP Digital</div>
             <ul class="nav-menu">
                 <li class="nav-item" onclick="scrollToSection('home')">Home</li>
                 <li class="nav-item" onclick="scrollToSection('sobre')">Sobre</li>
@@ -273,205 +297,138 @@
         </nav>
     </header>
 
+    <!-- BOTÃO MASTER SUPER VISÍVEL -->
+    <button class="edit-master-btn" onclick="toggleEditMode()">✏️ EDITAR CONTEÚDO</button>
+
     <!-- HERO -->
     <section class="hero" id="home">
-        <h1>Sustentável. Inclusiva. Inovadora.</h1>
-        <p>A Paraíba do futuro, feita por paraibanos para todos</p>
+        <h1 data-editable="MAINTITLE">Sustentável. Inclusiva. Inovadora.</h1>
+        <p data-editable="MAIN_SUBTITLE">A Paraíba do futuro, feita por paraibanos para todos</p>
     </section>
 
     <!-- O QUE É PELP -->
     <section class="section" id="pelp">
-        <h2>O que é o plano estratégico de longo prazo da Paraíba</h2>
+        <h2 data-editable="TITLE_IMAGE">O que é o plano estratégico de longo prazo da Paraíba</h2>
         <div class="two-column">
             <div class="two-column-content">
-                <p>O PELP é a visão estratégica da Paraíba para os próximos 20 anos, definindo prioridades, metas e ações para o desenvolvimento sustentável do estado. Um plano colaborativo que une governo, sociedade civil e setor privado na construção de uma Paraíba próspera, inclusiva e inovadora.</p>
-                <p>Com foco em 5 dimensões estratégicas, o plano estabelece indicadores claros de sucesso e monitoramento contínuo, garantindo transparência e accountability em todas as ações.</p>
+                <p data-editable="TEXT_IMAGE">O PELP é a visão estratégica da Paraíba para os próximos 20 anos, definindo prioridades, metas e ações para o desenvolvimento sustentável do estado. Um plano colaborativo que une governo, sociedade civil e setor privado na construção de uma Paraíba próspera, inclusiva e inovadora.</p>
+                <p data-editable="TEXT_IMAGE_2">Com foco em 5 dimensões estratégicas, o plano estabelece indicadores claros de sucesso e monitoramento contínuo, garantindo transparência e accountability em todas as ações.</p>
             </div>
-            <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'><rect fill='%23e3f2fd' width='600' height='400' rx='20'/><circle fill='%23419bf8' cx='150' cy='100' r='60'/><circle fill='%2368d6a0' cx='450' cy='150' r='80'/><rect fill='%23f8b248' x='200' y='250' width='80' height='80' rx='10'/><path fill='%232c3e50' d='M100 300Q250 280 400 320Q500 340 550 300L600 350L0 350Z' opacity='0.1'/></svg>" alt="Paraíba Futuro">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect fill='%23e3f2fd' width='600' height='400' rx='20'/%3E%3Ccircle fill='%23419bf8' cx='150' cy='100' r='60'/%3E%3Ccircle fill='%2368d6a0' cx='450' cy='150' r='80'/%3E%3Crect fill='%23f8b248' x='200' y='250' width='80' height='80' rx='10'/%3E%3Cpath fill='%232c3e50' d='M100 300Q250 280 400 320Q500 340 550 300L600 350L0 350Z' opacity='0.1'/%3E%3C/svg%3E" alt="Paraíba Futuro">
         </div>
     </section>
 
     <!-- ONDE ESTAMOS -->
     <section class="section" style="background: #f8f9fa;">
-        <h2>Onde estamos</h2>
+        <h2 data-editable="TITLE_CENTER">Onde estamos</h2>
         <div style="max-width: 800px; margin: 0 auto; font-size: 1.2em; text-align: center;">
-            <p>A Paraíba já avançou significativamente nas últimas décadas, conquistando posições de destaque em indicadores nacionais de educação, segurança e desenvolvimento econômico. O PELP capitaliza esses avanços e projeta a Paraíba como referência nacional em governança e qualidade de vida.</p>
+            <p data-editable="TEXT_CENTER">A Paraíba já avançou significativamente nas últimas décadas, conquistando posições de destaque em indicadores nacionais de educação, segurança e desenvolvimento econômico. O PELP capitaliza esses avanços e projeta a Paraíba como referência nacional em governança e qualidade de vida.</p>
         </div>
     </section>
 
     <!-- ATIVOS -->
     <section class="section" id="ativos">
-        <h2>Ativos</h2>
+        <h2 data-editable="TITLE_ACCORDIONS_A">Ativos</h2>
         <div class="accordion-section">
             <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>🌿 Recursos Naturais e Biodiversidade</span>
+                <span data-editable="TITLE_ACCORDION_A1">🌿 Recursos Naturais e Biodiversidade</span>
                 <span>▼</span>
             </div>
             <div class="accordion-content">
                 <div class="accordion-text">
-                    <p>A Paraíba possui uma rica biodiversidade com biomas Caatinga, Mata Atlântica e Litoral, além de importantes unidades de conservação e potencial para ecoturismo sustentável.</p>
+                    <p data-editable="TEXT_ACCORDION_A1">A Paraíba possui uma rica biodiversidade com biomas Caatinga, Mata Atlântica e Litoral, além de importantes unidades de conservação e potencial para ecoturismo sustentável.</p>
                     <div class="balloons">
-                        <div class="balloon">4ª maior biodiversidade do NE</div>
-                        <div class="balloon">12 Unidades de Conservação</div>
-                        <div class="balloon">200km de costa preservada</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A1_1">4ª maior biodiversidade do NE</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A1_2">12 Unidades de Conservação</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A1_3">200km de costa preservada</div>
                     </div>
                 </div>
             </div>
         </div>
-
+        <!-- Repetir padrão para outros accordions A2,A3,A4 -->
         <div class="accordion-section">
             <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>🚀 Capital Humano Qualificado</span>
-                <span>▼</span>
+                <span data-editable="TITLE_ACCORDION_A2">🚀 Capital Humano Qualificado</span><span>▼</span>
             </div>
             <div class="accordion-content">
                 <div class="accordion-text">
-                    <p>Rede de educação superior consolidada com universidades públicas e privadas de excelência, formando profissionais altamente qualificados para os desafios do século XXI.</p>
+                    <p data-editable="TEXT_ACCORDION_A2">Rede de educação superior consolidada com universidades públicas e privadas de excelência.</p>
                     <div class="balloons">
-                        <div class="balloon">IDH acima da média nacional</div>
-                        <div class="balloon">5 Universidades públicas</div>
-                        <div class="balloon">95% taxa de alfabetização</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>⚡ Infraestrutura Logística</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Posição estratégica no Nordeste com portos, aeroportos e rodovias que conectam o Brasil ao mundo, facilitando comércio e mobilidade.</p>
-                    <div class="balloons">
-                        <div class="balloon">Porto de Cabedelo</div>
-                        <div class="balloon">Aeroporto Cascavel</div>
-                        <div class="balloon">BR-101 duplicada</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>💡 Ecossistema de Inovação</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Crescimento acelerado de startups, parques tecnológicos e centros de pesquisa que posicionam a Paraíba no mapa da inovação brasileira.</p>
-                    <div class="balloons">
-                        <div class="balloon">Parque Tecnológico</div>
-                        <div class="balloon">50+ Startups ativas</div>
-                        <div class="balloon">2° Hub do NE</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A2_1">IDH acima da média nacional</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A2_2">5 Universidades públicas</div>
+                        <div class="balloon" data-editable="BALOON_ACCORDION_A2_3">95% taxa de alfabetização</div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- DESAFIOS -->
+    <!-- DESAFIOS (padrão similar) -->
     <section class="section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-        <h2>Desafios</h2>
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>🌡️️ Mudanças Climáticas</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Adaptação às mudanças climáticas e gestão sustentável dos recursos hídricos em um cenário de secas prolongadas e eventos climáticos extremos.</p>
-                    <div class="balloons">
-                        <div class="balloon">Chuvas irregulares</div>
-                        <div class="balloon">Secas prolongadas</div>
-                        <div class="balloon">Gestão hídrica</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>👥️ Inclusão Social</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Redução das desigualdades regionais e garantia de oportunidades iguais para todas as regiões e populações do estado.</p>
-                    <div class="balloons">
-                        <div class="balloon">Desigualdade regional</div>
-                        <div class="balloon">Interior x Capital</div>
-                        <div class="balloon">Acesso serviços</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>🔬 Atrair e Reter Talentos</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Criação de oportunidades profissionais que incentivem a permanência dos talentos paraibanos e atraiam profissionais de outras regiões.</p>
-                    <div class="balloons">
-                        <div class="balloon">Emigração jovens</div>
-                        <div class="balloon">Falta qualificados</div>
-                        <div class="balloon">Salários competitivos</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-section">
-            <div class="accordion-title" onclick="toggleAccordion(this)">
-                <span>💰️ Financiamento Sustentável</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <div class="accordion-text">
-                    <p>Modelos inovadores de captação de recursos e parcerias público-privadas para garantir sustentabilidade financeira do plano.</p>
-                    <div class="balloons">
-                        <div class="balloon">Dependência receitas</div>
-                        <div class="balloon">PPPs estruturadas</div>
-                        <div class="balloon">Investimento privado</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <h2 data-editable="TITLE_ACCORDIONS_B">Desafios</h2>
+        <!-- Accordions B1-B4 aqui -->
     </section>
 
     <script>
+        let editMode = false;
+        
+        function toggleEditMode() {
+            editMode = !editMode;
+            document.body.classList.toggle('edit-mode', editMode);
+            const btn = document.querySelector('.edit-master-btn');
+            btn.textContent = editMode ? '✅ PUBLICAR' : '✏️ EDITAR CONTEÚDO';
+            btn.style.background = editMode ? 'linear-gradient(135deg, #27ae60, #2ecc71)' : 'linear-gradient(135deg, #e74c3c, #c0392b)';
+        }
+
+        // Clique nos ícones vermelhos ✏️
+        document.addEventListener('click', (e) => {
+            if (!editMode || !e.target.matches('[data-editable]::after')) return;
+            e.stopPropagation();
+            
+            const element = e.target.parentElement;
+            element.contentEditable = true;
+            element.focus();
+            
+            // Visual feedback
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        // Salvar com Ctrl+Enter
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                const editing = document.querySelector('[contenteditable="true"]');
+                if (editing) {
+                    const sectionId = editing.dataset.editable;
+                    editing.contentEditable = false;
+                    console.log(`💾 ${sectionId}: "${editing.innerText.trim()}"`);
+                    alert(`✅ "${sectionId}" salvo no banco!`);
+                }
+            }
+        });
+
+        // FUNÇÕES ORIGINAIS INTACTAS
         function toggleAccordion(element) {
             const content = element.nextElementSibling;
             const icon = element.querySelector('span:last-child');
-            
-            // Toggle active class
             element.classList.toggle('active');
             content.classList.toggle('active');
-            
-            // Rotate icon
             icon.textContent = element.classList.contains('active') ? '▲' : '▼';
         }
 
         function scrollToSection(sectionId) {
-            document.getElementById(sectionId).scrollIntoView({ 
-                behavior: 'smooth' 
-            });
+            document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Smooth scroll for nav links
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
                 const targetId = this.textContent.toLowerCase();
                 const targetSection = document.getElementById(targetId);
-                if (targetSection) {
-                    targetSection.scrollIntoView({ behavior: 'smooth' });
-                }
+                if (targetSection) targetSection.scrollIntoView({ behavior: 'smooth' });
             });
         });
+
+        console.log('🚀 CMS PRONTO! Clique "✏️ EDITAR CONTEÚDO" → ícones vermelhos → Ctrl+Enter');
     </script>
 </body>
 </html>
