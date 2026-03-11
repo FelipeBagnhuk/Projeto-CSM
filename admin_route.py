@@ -1,21 +1,17 @@
-from typing import List, Optional, cast, Any 
-from models import Page, Section, SectionCreate, SectionRead, PageRead, Snapshot, SectionUpdate
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
+from models import (
+    Page, Section, PageRead, PageUpdate, SectionCreate, 
+    SectionRead, SectionUpdate, Snapshot, SectionsOrder, PageUpdateBody, SectionsOrderBody
+)
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 from edit_page import PageStatus
-from models import Page, Section, SectionCreate, SectionRead, PageRead, Snapshot, PageUpdate, SectionsOrder
 from data_base import SessionLocal
-from sqlalchemy.types import JSON
-import json
-from typing import Optional
-from pydantic import BaseModel
-from typing import List, Dict
-from sqlalchemy import String
+from sqlalchemy.types import String
 from datetime import datetime
 
-
-
-admin_router = APIRouter(prefix="/admin", tags=["Admin"])  
+admin_router = APIRouter(prefix="/admin", tags=["Admin"]) 
 
 def get_db():
     db = SessionLocal()
@@ -24,14 +20,14 @@ def get_db():
     finally:
         db.close()
 
-#Função da salvar snapshot
+# Função da salvar snapshot
 
 def save_snapshot(entity_id: str | int, action: str, snapshot_data: dict, db: Session):
     """Snapshot FLEXÍVEL para QUALQUER tipo de seção (texto, imagem, accordions)"""
     entity_id_str = str(entity_id)
     
     enhanced_data = {
-        **snapshot_data,  # ← Preserva dados antigos
+        **snapshot_data,  
         "snapshot_version": "2.0",
         "timestamp": datetime.utcnow().isoformat(),
         "section_type_friendly": snapshot_data.get("section_type_friendly", "genérica")
@@ -46,243 +42,253 @@ def save_snapshot(entity_id: str | int, action: str, snapshot_data: dict, db: Se
     db.add(snapshot)
     db.commit()
 
-#Criar/editar página (subtitui tudo)
+# Criar/editar página (substitui tudo)
 
-@admin_router.put("/pages/{slug}", response_model=PageRead)
-async def update_page(slug: str, page_data: PageUpdate, db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        page = Page(
-            slug=slug, 
-            title=page_data.title or "", 
-            status=PageStatus.DRAFT  
-        )
-        db.add(page)
-        db.commit()
-        db.refresh(page)
-        return page  
+# @admin_router.put("/pages/{slug}", response_model=PageRead, summary="Atualizar página completa")
+# async def update_page(
+#     slug: str,
+#     page_data: PageUpdateBody,
+#     db: Session = Depends(get_db)
+# ):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         page = Page(
+#             slug=slug, 
+#             title=page_data.title or 'Nova Página', 
+#             status=PageStatus.DRAFT  
+#         )
+#         db.add(page)
+#         db.commit()
+#         db.refresh(page)
+#         return page  
     
-    if page_data.title is not None:
-        page.title = page_data.title
-    if page_data.status is not None:
-        page.status = PageStatus(page_data.status)  
+#     # Só atualiza campos que vieram preenchidos
+#     page_data_dict = page_data.dict(exclude_unset=True)
+#     for key, value in page_data_dict.items():
+#         if hasattr(page, key):
+#             if key == 'status':
+#                 setattr(page, key, getattr(PageStatus, str(value)))
+#             else:
+#                 setattr(page, key, value)
     
-    db.commit()
-    db.refresh(page)
-    return page
+#     db.commit()
+#     db.refresh(page)
+#     return page
 
-#Lista as páginas:
+# Lista as páginas
 
-@admin_router.get("/pages", response_model=List[PageRead]) 
+@admin_router.get("/pages")
 async def list_pages(db: Session = Depends(get_db)):
-    return db.query(Page).all()
+    return {"status": "db_ok", "message": "Admin funcionando!"}
 
-#Criar seção: 
+#Criar seção  
 
-@admin_router.post("/pages/{slug}/sections", response_model=SectionRead)
-async def create_section(
-    slug: str,
-    section_data: SectionCreate,
-    db: Session = Depends(get_db)
-):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
+# @admin_router.post("/pages/{slug}/sections", response_model=SectionRead)
+# async def create_section(
+#     slug: str,
+#     section_data: SectionCreate,
+#     db: Session = Depends(get_db)
+# ):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
 
-    section = Section(
-        page_id=page.id,
-        type=section_data.type,     
-        content=section_data.content, 
-        order=section_data.order     
-        # Removido title!
-    )
-    db.add(section)
-    db.commit()
-    db.refresh(section)
-    return section
+#     section = Section(
+#         page_id=page.id,
+#         type=section_data.type,     
+#         content=section_data.content, 
+#         order=section_data.order     
+#     )
+#     db.add(section)
+#     db.commit()
+#     db.refresh(section)
+#     return section
 
-#Lista seções de uma página: 
+# Lista seções de uma página  
 
-@admin_router.get("/pages/{slug}/sections", response_model=List[SectionRead])
-async def get_page_sections(slug: str, db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
+# @admin_router.get("/pages/{slug}/sections", response_model=List[SectionRead])
+# async def get_page_sections(slug: str, db: Session = Depends(get_db)):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
     
-    sections = db.query(Section).filter(Section.page_id == page.id).order_by(Section.order).all()
-    return sections
+#     sections = db.query(Section).filter(Section.page_id == page.id).order_by(Section.order).all()
+#     return sections
 
-# Publicar página: 
+# Publicar página  
 
-@admin_router.post("/pages/{slug}/publish")
-async def publish_page(slug: str, db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
+# @admin_router.post("/pages/{slug}/publish")
+# async def publish_page(slug: str, db: Session = Depends(get_db)):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
 
-    page_snapshot = {
-    "entity_id": page.id,
-    "entity_type": "page",
-    "page_id": page.id,                    
-    "page_slug": page.slug,                
-    "old_status": page.status,
-    "old_title": page.title,
-    "action_info": "Página publicada"      
-}
+#     page_snapshot = {
+#         "entity_id": getattr(page, 'id', 0),      
+#         "entity_type": "page",
+#         "page_id": getattr(page, 'id', 0),        
+#         "page_slug": page.slug,         
+#         "old_status": getattr(page, 'status', ''),
+#         "old_title": getattr(page, 'title', ''),
+#         "action_info": "Página publicada"  
+#     }
 
-    save_snapshot(page.id, "page_published", page_snapshot, db)
-    setattr(page, 'status', PageStatus.PUBLISHED)
-    db.commit()
-    return {
-    "message": "Página publicada",
-    "page_id": page.id,
-    "entity_id": page.id  
-}
+#     save_snapshot(getattr(page, 'id', 0), "page_published", page_snapshot, db)  
+#     setattr(page, 'status', PageStatus.PUBLISHED)
+#     db.commit()
+#     return {
+#         "message": "Página publicada",
+#         "page_id": getattr(page, 'id', 0),        
+#         "entity_id": getattr(page, 'id', 0)       
+#     }
 
-#Reordenar seção
+# Reordenar seção
 
-@admin_router.put("/pages/{slug}/sections/order")  
-async def reorder_sections(slug: str, sections_order: List[int] = Body(embed=True), db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
+# @admin_router.put("/pages/{slug}/sections/order")
+# async def reorder_sections(
+#     slug: str, 
+#     body: SectionsOrderBody,
+#     db: Session = Depends(get_db)
+# ):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
     
-    for i, section_id in enumerate(sections_order):
-        section_query = db.query(Section).filter(
-            Section.id == section_id, 
-            Section.page_id == page.id
-        )
-        section = section_query.first()
+#     sections_order = body.sections_order
+#     for i, section_id in enumerate(sections_order):
+#         section = db.query(Section).filter(
+#             Section.id == section_id, 
+#             Section.page_id == getattr(page, 'id', 0)
+#         ).first()
         
-        if section is not None: 
-            setattr(section, 'order', i)  
+#         if section: 
+#             setattr(section, 'order', i)  
     
-    db.commit()
-    return {"message": "Ordem atualizada"}
+#     db.commit()
+#     return {"message": "Ordem atualizada"}
 
+# Atualiza seção específica  
 
-#Atualiza seção específica: 
+# @admin_router.put("/pages/{slug}/sections/{section_id}", response_model=SectionRead)
+# async def update_section(
+#     slug: str, 
+#     section_id: int,
+#     section_data: SectionUpdate,
+#     db: Session = Depends(get_db)
+# ):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
 
-@admin_router.put("/pages/{slug}/sections/{section_id}", response_model=SectionRead)
-async def update_section(
-    slug: str,
-    section_data: SectionUpdate,  
-    section_id: int,
-    db: Session = Depends(get_db)
-):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
+#     section = db.query(Section).filter(
+#         Section.id == section_id,
+#         Section.page_id == getattr(page, 'id', 0)  
+#     ).first()
+#     if not section:
+#         raise HTTPException(status_code=404, detail="Seção não encontrada")
 
-    section_query = db.query(Section).filter(
-        Section.id == section_id,
-        Section.page_id == page.id
-    )
-    section = section_query.first()
-    if not section:
-        raise HTTPException(status_code=404, detail="Seção não encontrada")
+#     snapshot_data = {
+#         "entity_id": section_id,
+#         "entity_type": "section",
+#         "old_type": getattr(section, 'type', '') or "",
+#         "old_content": getattr(section, 'content', '') or "",
+#         "old_order": getattr(section, 'order', 0) or 0
+#     }
+#     save_snapshot(section_id, "section_update", snapshot_data, db)
 
-    # Snapshot 
-    snapshot_data = {
-        "entity_id": section_id,
-        "entity_type": "section",
-        "old_type": section.type or "",
-        "old_content": section.content or "",
-        "old_order": section.order or 0
-    }
-    save_snapshot(section_id, "section_update", snapshot_data, db)
+#     # Atualiza só campos que vieram
+#     if getattr(section_data, 'content', None) is not None:
+#         setattr(section, 'content', getattr(section_data, 'content', ''))
+#     if getattr(section_data, 'type', None) is not None:
+#         setattr(section, 'type', getattr(section_data, 'type', ''))
+#     if getattr(section_data, 'order', None) is not None:
+#         setattr(section, 'order', int(getattr(section_data, 'order', 0)))
 
-    if section_data.content is not None:
-        section.content = section_data.content
-    if section_data.type is not None:
-        section.type = section_data.type
-    if section_data.order is not None:
-        section.order = section_data.order
-
-    db.commit()
-    db.refresh(section)
-    return section
+#     db.commit()
+#     db.refresh(section)
+#     return section
 
 # Previsão (Draft para quem posta, não salva no público)
 
-@admin_router.post("/pages/{slug}/preview")
-async def preview_page(slug: str, db: Session = Depends(get_db)):
-    page = db.query(Page).filter(Page.slug == slug).first()
-    if not page:
-        raise HTTPException(status_code=400, detail="Página não encontrada")
+# @admin_router.post("/pages/{slug}/preview")
+# async def preview_page(slug: str, db: Session = Depends(get_db)):
+#     page = db.query(Page).filter(Page.slug == slug).first()
+#     if not page:
+#         raise HTTPException(status_code=400, detail="Página não encontrada")
 
-    current_status = getattr(page, 'status', '')
-    if current_status != PageStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Só drafts podem ter preview")
+#     current_status = getattr(page, 'status', '')
+#     if current_status != PageStatus.DRAFT:
+#         raise HTTPException(status_code=400, detail="Só drafts podem ter preview")
     
-    return {"preview_url": f"/preview/{slug}", "page": page}
+#     return {"preview_url": f"/preview/{slug}", "page": page}
 
 # Lista Snapshots
-@admin_router.get("/snapshots/{entity_id}")
-async def list_snapshots(entity_id: str, db: Session = Depends(get_db)):
-    snapshots = db.query(Snapshot).filter(
-        Snapshot.entity_id.cast(String) == entity_id
-    ).order_by(Snapshot.created_at.desc()).all()
-    
-    return [
-        {
-            "id": snapshot.id,
-            "entity_id": snapshot.entity_id,
-            "entity_type": snapshot.entity_type,
-            "action": snapshot.action,
-            "data": snapshot.data,
-            "created_at": snapshot.created_at.isoformat()
-        }
-        for snapshot in snapshots
-    ]
 
-# 9. Restaura Snapshot
+# @admin_router.get("/snapshots/{entity_id}")
+# async def list_snapshots(entity_id: str, db: Session = Depends(get_db)):
+#     snapshots = db.query(Snapshot).filter(
+#         Snapshot.entity_id.cast(String) == entity_id
+#     ).order_by(Snapshot.created_at.desc()).all()
+    
+#     return [
+#         {
+#             "id": snapshot.id,
+#             "entity_id": snapshot.entity_id,
+#             "entity_type": snapshot.entity_type,
+#             "action": snapshot.action,
+#             "data": snapshot.data,
+#             "created_at": snapshot.created_at.isoformat()
+#         }
+#         for snapshot in snapshots
+#     ]
 
-@admin_router.post("/snapshots/{snapshot_id}/restore")
-async def restore_snapshot(snapshot_id: int, db: Session = Depends(get_db)):
-    snapshot = db.query(Snapshot).filter(Snapshot.id == snapshot_id).first()
-    if not snapshot:
-        raise HTTPException(status_code=404, detail="Snapshot não encontrado")
+# Restaura Snapshot
+
+# @admin_router.post("/snapshots/{snapshot_id}/restore")
+# async def restore_snapshot(snapshot_id: int, db: Session = Depends(get_db)):
+#     snapshot = db.query(Snapshot).filter(Snapshot.id == snapshot_id).first()
+#     if not snapshot:
+#         raise HTTPException(status_code=404, detail="Snapshot não encontrado")
     
-    entity_id = int(snapshot.entity_id)
-    data = snapshot.data
+#     entity_id = int(getattr(snapshot, 'entity_id', 0))
+#     snapshot_data = getattr(snapshot, 'data', {}) 
     
-    # PAGE - com ANTES/DEPOIS
-    if snapshot.entity_type == "page":
-        page = db.query(Page).filter(Page.id == entity_id).first()
-        if page:
-            old_title = page.title
-            old_status = page.status
+#     # PAGE
+#     if getattr(snapshot, 'entity_type', '') == "page":
+#         page = db.query(Page).filter(Page.id == entity_id).first()
+#         if page:
+#             old_title = getattr(page, 'title', '')
+#             old_status = getattr(page, 'status', PageStatus.DRAFT)
             
-            page.title = data.get("old_title", page.title)
-            page.status = data.get("old_status", page.status)
+#             setattr(page, 'title', snapshot_data.get("old_title", old_title))
+#             setattr(page, 'status', PageStatus.DRAFT)
             
-            db.commit()
-            return {
-                "message": "Página restaurada!",
-                "entity": "page",
-                "was": {"title": old_title, "status": old_status},
-                "now": {"title": page.title, "status": page.status}
-            }
+#             db.commit()
+#             return {
+#                 "message": "Página restaurada!",
+#                 "entity": "page",
+#                 "was": {"title": old_title, "status": str(old_status)},
+#                 "now": {"title": getattr(page, 'title', ''), "status": str(getattr(page, 'status', ''))}
+#             }
     
-    # SECTION - com ANTES/DEPOIS  
-    elif snapshot.entity_type == "section":
-        section = db.query(Section).filter(Section.id == entity_id).first()
-        if section:
-            old_type = section.type
-            old_content = section.content[:50] + "..." if section.content else ""
-            old_order = section.order
+#     # SECTION
+#     elif getattr(snapshot, 'entity_type', '') == "section":
+#         section = db.query(Section).filter(Section.id == entity_id).first()
+#         if section:
+#             old_type = getattr(section, 'type', '')
+#             old_content = (getattr(section, 'content', '')[:50] + "...") if getattr(section, 'content', '') else ""
+#             old_order = getattr(section, 'order', 0)
             
-            section.type = data.get("old_type", section.type) or ""
-            section.content = data.get("old_content", section.content) or ""
-            section.order = data.get("old_order", section.order) or 0
+#             setattr(section, 'type', snapshot_data.get("old_type", old_type))
+#             setattr(section, 'content', snapshot_data.get("old_content", getattr(section, 'content', '')))
+#             setattr(section, 'order', int(snapshot_data.get("old_order", old_order)))
             
-            db.commit()
-            return {
-                "message": "Seção restaurada!",
-                "entity": "section", 
-                "was": {"type": old_type, "content": old_content, "order": old_order},
-                "now": {"type": section.type, "content": section.content[:50] + "...", "order": section.order}
-            }
+#             db.commit()
+#             return {
+#                 "message": "Seção restaurada!",
+#                 "entity": "section", 
+#                 "was": {"type": old_type, "content": old_content, "order": old_order},
+#                 "now": {"type": getattr(section, 'type', ''), "content": getattr(section, 'content', '')[:50] + "...", "order": getattr(section, 'order', 0)}
+#             }
     
     raise HTTPException(status_code=400, detail="Tipo não suportado")

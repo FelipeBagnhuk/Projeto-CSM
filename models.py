@@ -86,9 +86,21 @@ class Snapshot(Base):
     created_at = Column(DateTime, server_default=func.now())    
 
 
+class PageStatus(str, Enum):  # ← Importante!
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
 class PageUpdate(BaseModel):
-    title: str | None = None
-    status: str | None = None 
+    title: Optional[str] = None    
+    status: Optional[str] = None  
 
 class SectionsOrder(BaseModel):
+    sections_order: List[int]
+
+class PageUpdateBody(BaseModel):
+    title: Optional[str] = None
+    status: Optional[str] = None
+    content: Optional[str] = None
+
+class SectionsOrderBody(BaseModel):
     sections_order: List[int]
